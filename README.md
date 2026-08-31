@@ -20,16 +20,21 @@ SolidWorks, security scanners, social integrations, Google Workspace, music, new
 npm install
 npm run dev
 ```
-
+```bash
+npm run agent
+```
+```bash
+ollama serve
+```
 Open `http://localhost:3000`.
 
 ## Design safety
 
-Breadboard image analysis produces an auditable draft. Each component and connection must be detectable, inferred, confirmed, edited, or rejected before schematic/PCB generation. AXION Lite must never claim that an external CAD or KiCad application changed unless an active bridge confirms it.
+Breadboard image analysis produces an auditable draft. Each component and connection must be detectable, inferred, confirmed, edited, or rejected before schematic/PCB generation. AXION Lite will never claim that an external CAD or KiCad application changed unless an active bridge confirms it.
 
 ## Model strategy
 
-MediaPipe handles camera gestures independently from language or vision models. Keep models outside the repository and configure them separately. This keeps the application package small enough for Chromebook and other low-power deployments.
+MediaPipe handles camera gestures independently from language or vision models. Keep models outside the repository and configure them separately. This keeps Axion-Lite small enough for Chromebook and other low-power deployments.
 
 ## Planned API routes
 
