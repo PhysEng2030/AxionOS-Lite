@@ -1,6 +1,6 @@
 # AXION Lite
 
-AXION Lite is a separate, focused project for Chromebook-friendly web and engineering workflows.
+AXION Lite is a focused, Chromebook-friendly AI assistant for web and engineering workflows.
 
 ## Scope
 
@@ -29,7 +29,7 @@ Breadboard image analysis produces an auditable draft. Each component and connec
 
 ## Model strategy
 
-MediaPipe handles camera gestures independently from language or vision models. Keep models outside the repository and configure them separately. This keeps the application package small enough for Chromebook deployment.
+MediaPipe handles camera gestures independently from language or vision models. Keep models outside the repository and configure them separately. This keeps the application package small enough for Chromebook and other low-power deployments.
 
 ## Planned API routes
 
