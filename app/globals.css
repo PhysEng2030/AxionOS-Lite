@@ -15,7 +15,19 @@ textarea, input { width: 100%; border: 1px solid #214d75; border-radius: 8px; ba
 textarea { min-height: 110px; resize: vertical; }
 button { border: 1px solid #3479b5; border-radius: 8px; color: #dce9ff; background: #0b2740; padding: 9px 12px; }
 button:hover { background: #123d61; }
+button:disabled { cursor: wait; opacity: .55; }
+.upload-button { display: inline-block; border: 1px solid #3479b5; border-radius: 8px; color: #dce9ff; background: #0b2740; padding: 9px 12px; cursor: pointer; font-size: .85rem; }
+.upload-button:hover { background: #123d61; }
+.breadboard-preview { display: block; width: 100%; max-height: 220px; object-fit: contain; margin: 12px 0; border-radius: 8px; border: 1px solid #214d75; }
 .command { display: flex; gap: 8px; margin-top: 16px; }
 .command input { flex: 1; }
+.response { white-space: pre-wrap; max-height: 360px; overflow: auto; margin: 10px 0 0; border: 1px solid #1b4164; border-radius: 10px; padding: 14px; color: #cfe7ff; background: #050c15cc; line-height: 1.5; }
 .status { color: #75e0b0; min-height: 1.4em; margin-top: 10px; }
+.status-card { margin-top: 18px; }
+.status-header, .model-row { display: flex; align-items: center; gap: 10px; }
+.status-header h2 { flex: 1; }
+.online { color: #75e0b0; font-size: .75rem; letter-spacing: .12em; }
+.offline { color: #ffb36b; font-size: .75rem; letter-spacing: .12em; }
+.model-row select { flex: 1; border: 1px solid #214d75; border-radius: 8px; background: #050c15; color: #eaf4ff; padding: 9px; }
+code { display: inline-block; margin-top: 10px; color: #9cc4e8; background: #050c15; padding: 8px; border-radius: 6px; }
 ul { padding-left: 20px; color: #a9c4e2; line-height: 1.7; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 
 const commands = [
   "Axion, search the web for …",
@@ -12,15 +12,65 @@ const commands = [
   "Axion, write Arduino firmware for …",
 ];
 
+const quickActions = [
+  { id: "web", title: "WEB / API", description: "Search and summarize engineering documentation.", prompt: "Axion, search the web for the latest KiCad PCB design guidance" },
+  { id: "kicad", title: "KICAD PCB", description: "Review schematics and generate PCB checklists.", prompt: "Axion, review a KiCad schematic for power, grounding, footprints, and ERC risks" },
+  { id: "fusion", title: "FUSION 360", description: "Plan sketches, dimensions, extrusions, and cuts.", prompt: "Axion, open Fusion 360 and prepare a 40 millimeter by 20 millimeter sketch" },
+  { id: "arduino", title: "ARDUINO", description: "Draft and validate firmware for the electronics design.", prompt: "Axion, write Arduino firmware for a blinking status LED" },
+];
+
 export default function Home() {
   const [command, setCommand] = useState("");
-  const [message, setMessage] = useState("");
+  const [response, setResponse] = useState("");
+  const [model, setModel] = useState("qwen3:1.7b");
+  const [models, setModels] = useState<string[]>([]);
+  const [online, setOnline] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [breadboardImage, setBreadboardImage] = useState<string | null>(null);
 
-  function submit() {
-    const value = command.trim();
-    if (!value) return;
-    setMessage(`Queued: ${value}`);
-    setCommand("");
+  async function checkOllama() {
+    try {
+      const result = await fetch("/api/ollama/status", { cache: "no-store" });
+      const data = await result.json() as { online: boolean; models?: string[] };
+      setOnline(data.online);
+      setModels(data.models ?? []);
+      if (data.models?.length && !data.models.includes(model)) setModel(data.models[0]);
+    } catch {
+      setOnline(false);
+    }
+  }
+
+  useEffect(() => { void checkOllama(); }, []);
+
+  async function submit(value = command) {
+    const prompt = value.trim();
+    if (!prompt || busy) return;
+    setBusy(true);
+    setResponse("");
+    try {
+      const result = await fetch("/api/ollama/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, model }),
+      });
+      const data = await result.json() as { ok?: boolean; response?: string; error?: string };
+      setResponse(data.ok ? data.response ?? "No response returned." : data.error ?? "AXION is offline.");
+      setOnline(Boolean(data.ok));
+    } catch {
+      setOnline(false);
+      setResponse("AXION is offline — local LLM not reachable. Start Ollama and try again.");
+    } finally {
+      setBusy(false);
+      setCommand("");
+    }
+  }
+
+  function handleBreadboardImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => setBreadboardImage(String(reader.result));
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -29,19 +79,20 @@ export default function Home() {
       <h1>AXION Lite</h1>
       <p className="subtitle">A focused Chromebook-friendly assistant for web research, KiCad PCB workflows, Fusion 360 design, Arduino firmware, and auditable breadboard-to-PCB conversion.</p>
 
-      <div className="command">
-        <input value={command} onChange={(e) => setCommand(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} placeholder="Axion, describe what you want to build…" aria-label="AXION command" />
-        <button type="button" onClick={submit}>SEND</button>
-      </div>
-      <div className="status" aria-live="polite">{message}</div>
+      <section className="card status-card">
+        <div className="status-header"><h2>LOCAL MODEL</h2><span className={online ? "online" : "offline"}>{online === null ? "CHECKING…" : online ? "ONLINE" : "OFFLINE"}</span></div>
+        <p>{online ? "Ollama is reachable and ready for local prompts." : "AXION can still show guides offline. Start Ollama to enable local reasoning."}</p>
+        <div className="model-row"><select value={model} onChange={(e) => setModel(e.target.value)} disabled={!models.length} aria-label="Ollama model"><option value={model}>{models.length ? model : "qwen3:1.7b (default)"}</option>{models.filter((name) => name !== model).map((name) => <option key={name} value={name}>{name}</option>)}</select><button type="button" onClick={() => void checkOllama()}>CHECK AGAIN</button></div>
+        {!online && <code>ollama pull qwen3:1.7b</code>}
+      </section>
+
+      <div className="command"><input value={command} onChange={(e) => setCommand(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void submit(); }} placeholder="Axion, describe what you want to build…" aria-label="AXION command" /><button type="button" onClick={() => void submit()} disabled={busy}>{busy ? "THINKING…" : "SEND"}</button></div>
+      {response && <pre className="response" aria-live="polite">{response}</pre>}
 
       <section className="grid">
-        <article className="card"><h2>WEB / API</h2><p>Search, fetch, summarize, and inspect web documentation with a small tool surface.</p><ul><li>Search the web</li><li>Read datasheets</li><li>Summarize technical pages</li></ul></article>
-        <article className="card"><h2>KICAD PCB</h2><p>Generate and audit schematic and PCB drafts with explicit ERC, DRC, footprint, and connection review gates.</p><ul><li>Schematic review</li><li>PCB placement guidance</li><li>ERC/DRC checklist</li></ul></article>
-        <article className="card"><h2>FUSION 360</h2><p>Use Fusion 360 as the Lite mechanical-design target for sketches, dimensions, extrusions, cuts, and enclosure planning.</p><ul><li>Unit-aware sketches</li><li>Extrude and cut plans</li><li>Manufacturing checks</li></ul></article>
-        <article className="card"><h2>ARDUINO</h2><p>Generate, edit, compile, and synchronize firmware with the electronics design.</p><ul><li>Typed or dictated code</li><li>Compile locally</li><li>Upload when explicitly confirmed</li></ul></article>
-        <article className="card"><h2>BREADBOARD → PCB</h2><p>Analyze a photo, identify parts and wires, show confidence, and require an audit decision for each item before KiCad output.</p><ul><li>Evidence crop per part</li><li>Detected vs. inferred labels</li><li>Confirm, edit, or reject</li></ul></article>
-        <article className="card"><h2>MEDIAPIPE</h2><p>Keep gesture tracking independent from the LLM for responsive Chromebook operation.</p><ul><li>Point and pinch to select</li><li>Open palm to pan</li><li>Two-hand spread to zoom</li></ul></article>
+        {quickActions.map((action) => <article className="card" key={action.id}><h2>{action.title}</h2><p>{action.description}</p><button type="button" onClick={() => void submit(action.prompt)} disabled={busy}>TRY EXAMPLE</button></article>)}
+        <article className="card"><h2>BREADBOARD → PCB</h2><p>Upload a breadboard image to prepare an auditable analysis request. Every part and connection must be confirmed before KiCad output.</p><label className="upload-button">{breadboardImage ? "IMAGE READY · ANALYZE" : "CHOOSE BREADBOARD IMAGE"}<input type="file" accept="image/*" onChange={handleBreadboardImage} hidden /></label>{breadboardImage && <><img src={breadboardImage} alt="Breadboard selected for analysis" className="breadboard-preview" /><button type="button" onClick={() => void submit("Axion, analyze the uploaded breadboard image. Identify components, wires, rails, confidence, and unresolved connections.")} disabled={busy}>ANALYZE IMAGE</button></>}</article>
+        <article className="card"><h2>MEDIAPIPE</h2><p>Keep gesture tracking independent from the LLM for responsive Chromebook operation.</p><ul><li>Point and pinch to select</li><li>Open palm to pan</li><li>Two-hand spread to zoom</li></ul><button type="button" onClick={() => setResponse("MediaPipe gesture mode is planned for the browser client. It will not require Ollama.")}>CHECK GESTURE STATUS</button></article>
       </section>
 
       <section className="card" style={{ marginTop: 14 }}><h2>WAKE-WORD COMMANDS</h2><p>Commands are intentionally explicit and begin with “Axion”.</p><ul>{commands.map((item) => <li key={item}>{item}</li>)}</ul></section>
