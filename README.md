@@ -14,6 +14,10 @@ AXION Lite is a focused, Chromebook-friendly AI assistant for web and engineerin
 
 SolidWorks, security scanners, social integrations, Google Workspace, music, news, and large bundled models are intentionally excluded from the Lite foundation.
 
+## Update — automatic model fallback
+
+The chat route no longer trusts a hardcoded model name. Before every generation, `/api/ollama/chat` resolves the model against Ollama's installed list (`/api/tags`): a requested model is used if installed; otherwise the `OLLAMA_MODEL` env preference is honored if present; otherwise the **smallest installed model** runs (Chromebook-friendly). The response echoes the `model` that actually ran, and `/api/ollama/status` returns the same chain's choice as `defaultModel` so the UI selector boots synced and self-corrects an uninstalled selection. A missing `qwen3:1.7b` can no longer cause "model not found" errors.
+
 ## Update — breadboard photo → Tinkercad circuit suggestions
 
 The BREADBOARD → PCB card now feeds directly into the Tinkercad flow:

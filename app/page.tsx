@@ -123,10 +123,14 @@ export default function Home() {
   async function checkOllama() {
     try {
       const result = await fetch("/api/ollama/status", { cache: "no-store" });
-      const data = await result.json() as { online: boolean; models?: string[] };
+      const data = await result.json() as { online: boolean; models?: string[]; defaultModel?: string | null };
       setOnline(data.online);
       setModels(data.models ?? []);
-      if (data.models?.length && !data.models.includes(model)) setModel(data.models[0]);
+      // Fix an uninstalled selection using the server-resolved default;
+      // keep a valid manual choice untouched.
+      if (data.models?.length && !data.models.includes(model)) {
+        setModel(data.defaultModel ?? data.models[0]);
+      }
     } catch {
       setOnline(false);
     }
@@ -145,9 +149,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, model }),
       });
-      const data = await result.json() as { ok?: boolean; response?: string; error?: string };
+      const data = await result.json() as { ok?: boolean; response?: string; error?: string; model?: string };
       setResponse(data.ok ? data.response ?? "No response returned." : data.error ?? "AXION is offline.");
       setOnline(Boolean(data.ok));
+      // Sync the selector to the model that actually ran (the server may
+      // have overridden an uninstalled selection).
+      if (data.ok && data.model) setModel(data.model);
     } catch {
       setOnline(false);
       setResponse("AXION is offline — local LLM not reachable. Start Ollama and try again.");
