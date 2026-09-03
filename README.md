@@ -14,6 +14,26 @@ AXION Lite is a focused, Chromebook-friendly AI assistant for web and engineerin
 
 SolidWorks, security scanners, social integrations, Google Workspace, music, news, and large bundled models are intentionally excluded from the Lite foundation.
 
+## Update — Tinkercad bridge
+
+AXION Lite now connects to Tinkercad:
+
+- **Tinkercad card:** paste any `tinkercad.com/things/<id>` URL (or bare id)
+  and the design opens inside AXION Lite in a read-only embedded viewer.
+- **Bridge route:** `/api/tinkercad` validates the URL server-side, fetches
+  the Thing's metadata (title, author, thumbnail) from the page's
+  server-rendered tags, and returns Tinkercad's official embed URL
+  (`/embed/<id>`).
+- **No credentials:** Tinkercad has no public REST API, so the bridge is
+  read-only against public Things — nothing is stored, no login involved.
+  Editing stays in Tinkercad; open the design in a new tab from the viewer
+  when you need to modify it.
+
+Validation: `npm run check` and `npm run build` both pass, and the build
+recognizes `/api/tinkercad`. Verified live: open-by-URL, open-by-id, and
+rejection of non-Tinkercad URLs; the embed endpoint serves with no
+X-Frame-Options / CSP frame-ancestors headers, so the iframe viewer works.
+
 ## Update — focused controls, local Ollama, and build reliability
 
 The latest AXION Lite update turns the initial feature cards into working,
@@ -53,6 +73,7 @@ Both checks pass, and the build recognizes:
 ```text
 /api/ollama/status
 /api/ollama/chat
+/api/tinkercad
 ```
 
 ## Local development

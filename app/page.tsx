@@ -27,6 +27,31 @@ export default function Home() {
   const [online, setOnline] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [breadboardImage, setBreadboardImage] = useState<string | null>(null);
+  const [tinkUrl, setTinkUrl] = useState("");
+  const [tinkThing, setTinkThing] = useState<{ id: string; name: string; url: string; embedUrl: string } | null>(null);
+  const [tinkError, setTinkError] = useState<string | null>(null);
+  const [tinkLoading, setTinkLoading] = useState(false);
+
+  async function openTinkercad(raw?: string) {
+    const value = (raw ?? tinkUrl).trim();
+    if (!value || tinkLoading) return;
+    setTinkLoading(true);
+    setTinkError(null);
+    setTinkThing(null);
+    try {
+      const res = await fetch(`/api/tinkercad?open=${encodeURIComponent(value)}`, { cache: "no-store" });
+      const data = await res.json() as { ok?: boolean; thing?: { id: string; name: string; url: string; embedUrl: string }; error?: string };
+      if (data.ok && data.thing) {
+        setTinkThing(data.thing);
+      } else {
+        setTinkError(data.error ?? "Could not open that Tinkercad Thing.");
+      }
+    } catch {
+      setTinkError("Tinkercad bridge unreachable — check your connection.");
+    } finally {
+      setTinkLoading(false);
+    }
+  }
 
   async function checkOllama() {
     try {
@@ -92,6 +117,7 @@ export default function Home() {
       <section className="grid">
         {quickActions.map((action) => <article className="card" key={action.id}><h2>{action.title}</h2><p>{action.description}</p><button type="button" onClick={() => void submit(action.prompt)} disabled={busy}>TRY EXAMPLE</button></article>)}
         <article className="card"><h2>BREADBOARD → PCB</h2><p>Upload a breadboard image to prepare an auditable analysis request. Every part and connection must be confirmed before KiCad output.</p><label className="upload-button">{breadboardImage ? "IMAGE READY · ANALYZE" : "CHOOSE BREADBOARD IMAGE"}<input type="file" accept="image/*" onChange={handleBreadboardImage} hidden /></label>{breadboardImage && <><img src={breadboardImage} alt="Breadboard selected for analysis" className="breadboard-preview" /><button type="button" onClick={() => void submit("Axion, analyze the uploaded breadboard image. Identify components, wires, rails, confidence, and unresolved connections.")} disabled={busy}>ANALYZE IMAGE</button></>}</article>
+        <article className="card tinkercad-card"><h2>TINKERCAD</h2><p>Open a Tinkercad design right here — paste a Thing URL or id from tinkercad.com and it loads in the embedded viewer, read-only.</p><div className="model-row"><input value={tinkUrl} onChange={(e) => setTinkUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void openTinkercad(); }} placeholder="tinkercad.com/things/… or id" aria-label="Tinkercad Thing URL or id" /><button type="button" onClick={() => void openTinkercad()} disabled={tinkLoading}>{tinkLoading ? "LOADING…" : "OPEN"}</button></div>{tinkError && <p className="tink-error">{tinkError}</p>}{tinkThing && <p className="tink-ok">◈ {tinkThing.name}</p>}{tinkThing && <iframe title={`Tinkercad viewer — ${tinkThing.name}`} src={tinkThing.embedUrl} allowFullScreen className="tink-frame" loading="lazy" />}</article>
         <article className="card"><h2>MEDIAPIPE</h2><p>Keep gesture tracking independent from the LLM for responsive Chromebook operation.</p><ul><li>Point and pinch to select</li><li>Open palm to pan</li><li>Two-hand spread to zoom</li></ul><button type="button" onClick={() => setResponse("MediaPipe gesture mode is planned for the browser client. It will not require Ollama.")}>CHECK GESTURE STATUS</button></article>
       </section>
 
