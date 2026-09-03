@@ -14,6 +14,16 @@ AXION Lite is a focused, Chromebook-friendly AI assistant for web and engineerin
 
 SolidWorks, security scanners, social integrations, Google Workspace, music, news, and large bundled models are intentionally excluded from the Lite foundation.
 
+## Update — breadboard photo → Tinkercad circuit suggestions
+
+The BREADBOARD → PCB card now feeds directly into the Tinkercad flow:
+
+1. **Analyze** — the uploaded photo goes to a vision-capable Ollama model (e.g. Gemma 4 12B; the route passes the image via Ollama's multimodal `images` field), which returns a JSON component list.
+2. **Map** — `POST /api/tinkercad/suggest` (`app/api/tinkercad/suggest/route.ts`) matches the components against a library of Tinkercad components-panel part names (Arduino Uno R3, LED, Resistor, Pushbutton, servo, sensors, …).
+3. **Suggest** — the TINKERCAD card renders actionable next steps: recipe titles (LED blink, servo control, distance sensing, button input, analog readout), why the build fits, the exact parts to place, one-click **FIND SIMILAR CIRCUITS** / **START NEW CIRCUIT** links, and curated Tinkercad lessons.
+
+`/api/ollama/chat` now accepts an optional `imageDataUrl` (data URL) and its timeout is raised to 5 min so a cold vision-model load doesn't kill the request. Test the whole chain offline of the UI with `node scripts/test-breadboard-suggest.mjs <imagePath>`.
+
 ## Update — gesture control (MediaPipe) for the Tinkercad viewer
 
 The Tinkercad viewer now has in-browser hand tracking — open a design, press **ENABLE GESTURES**, and grant camera access. MediaPipe Hands (WASM + `hand_landmarker.task` vendored under `public/mediapipe/`, no CDN, works offline) runs at ~30 fps with GPU→CPU fallback for Chromebook-class hardware, and a dependency-free landmark classifier (`app/lib/handGestures.ts`) maps gestures to viewer controls:
