@@ -91,8 +91,13 @@ function parseThingMeta(html: string, id: string): Thing {
 }
 
 function validThingId(raw: string): string | null {
-  const m = /^\s*(?:https?:\/\/)?(?:www\.)?tinkercad\.com\/(?:things|embed)\/([A-Za-z0-9]{8,15})/.exec(raw.trim());
-  return m ? m[1] : null;
+  const trimmed = raw.trim();
+  // Full URL form: tinkercad.com/things/<id> (or /embed/<id>).
+  const m = /^\s*(?:https?:\/\/)?(?:www\.)?tinkercad\.com\/(?:things|embed)\/([A-Za-z0-9]{8,15})/.exec(trimmed);
+  if (m) return m[1];
+  // Bare id form (11-char Tinkercad Thing ids, e.g. d06qymTYfGn).
+  if (/^[A-Za-z0-9]{10,15}$/.test(trimmed)) return trimmed;
+  return null;
 }
 
 export async function GET(req: Request) {

@@ -14,6 +14,20 @@ AXION Lite is a focused, Chromebook-friendly AI assistant for web and engineerin
 
 SolidWorks, security scanners, social integrations, Google Workspace, music, news, and large bundled models are intentionally excluded from the Lite foundation.
 
+## Update — gesture control (MediaPipe) for the Tinkercad viewer
+
+The Tinkercad viewer now has in-browser hand tracking — open a design, press **ENABLE GESTURES**, and grant camera access. MediaPipe Hands (WASM + `hand_landmarker.task` vendored under `public/mediapipe/`, no CDN, works offline) runs at ~30 fps with GPU→CPU fallback for Chromebook-class hardware, and a dependency-free landmark classifier (`app/lib/handGestures.ts`) maps gestures to viewer controls:
+
+| Gesture | Action |
+| --- | --- |
+| Open-palm drag | Pan the viewer |
+| Two open palms, spread apart | Zoom (0.4×–3×) |
+| ✌ (victory) held 0.5 s | Reset view |
+| Fist | Freeze transform |
+| Pinch / point | Cursor indicator |
+
+The cross-origin embed can't be scripted, so gestures drive a transform wrapper around the iframe (`app/components/GestureTinkercadViewer.tsx`); a picture-in-picture canvas shows the camera feed with the live hand skeleton and pinch indicator, and the HUD labels the active gesture. The toolbar adds RESET, FULLSCREEN, and OPEN IN TINKERCAD. Camera teardown is complete on stop/unmount.
+
 ## Update — Tinkercad bridge
 
 AXION Lite now connects to Tinkercad:
